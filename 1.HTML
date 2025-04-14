@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Optical Fiber Signal Loss Simulation</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      padding: 30px;
+      margin: 0;
+    }
+
+    .main-layout {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .left-column, .right-column {
+      flex: 1 1 400px;
+      max-width: 600px;
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.15);
+      padding: 25px;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      backdrop-filter: blur(8px);
+    }
+
+    .title {
+      font-size: 2.5em;
+      font-weight: bold;
+      padding: 15px;
+      background: lightpink;
+      color: black;
+      border-radius: 10px;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .slider-container {
+      margin-bottom: 20px;
+      text-align: left;
+      padding: 10px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    input[type="range"] {
+      width: 80%;
+      cursor: pointer;
+      transition: transform 0.2s ease-in-out;
+    }
+
+    input[type="range"]:hover {
+      transform: scale(1.05);
+    }
+
+    button {
+      padding: 12px 30px;
+      background: #ff758c;
+      border: none;
+      color: white;
+      border-radius: 6px;
+      font-size: 1.2em;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #ff3d68;
+    }
+
+    #results {
+      margin-top: 25px;
+      font-size: 1.1em;
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 10px;
+    }
+
+    .result-line {
+      margin: 5px 0;
+    }
+
+    canvas {
+      margin-top: 20px;
+      width: 100%;
+      height: 300px;
+    }
+
+    .concepts {
+      text-align: left;
+      margin-top: 20px;
+      padding: 20px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.2);
+      animation: fadeIn 1s ease-in;
+    }
+
+    .right-column {
+      flex: 1 1 400px;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .image-container {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .image-wrapper {
+      position: relative;
+      overflow: hidden;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .image-wrapper:hover .fiber-image {
+      transform: scale(1.05);
+    }
+
+    .fiber-image {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      border-radius: 12px;
+    }
+
+    .caption {
+      text-align: center;
+      margin-top: 5px;
+      font-size: 1em;
+      font-weight: 500;
+    }
+
+    /* Lightbox Styles */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+      box-shadow: 0 0 30px rgba(255, 255, 255, 0.2);
+    }
+
+    .lightbox:target {
+      display: flex;
+    }
+
+    @media (max-width: 768px) {
+      .left-column, .right-column {
+        max-width: 100%;
+      }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <div class="title">Optical Fiber Signal Loss Simulation</div>
+
+  <div class="main-layout">
+    <!-- Left Column -->
+    <div class="left-column">
+      <div class="container">
+        <p>Adjust parameters to visualize signal loss in an optical fiber.</p>
+
+        <div class="concepts">
+          <h2>Concepts Used:</h2>
+          <p><strong>Absorption Loss:</strong> Loss of signal due to material absorption in the fiber.</p>
+          <p><strong>Scattering Loss:</strong> Loss caused by imperfections in the fiber that scatter light.</p>
+          <p><strong>Total Loss:</strong> The sum of absorption and scattering losses over the fiber length.</p>
+        </div>
+
+        <div class="slider-container">
+          <label for="fiberLength">Fiber Length (km):</label>
+          <input type="range" id="fiberLength" min="1" max="100" value="10">
+          <span id="fiberLengthValue">10 km</span>
+        </div>
+
+        <div class="slider-container">
+          <label for="attenuation">Attenuation Coefficient (dB/km):</label>
+          <input type="range" id="attenuation" min="0" max="10" value="2" step="0.1">
+          <span id="attenuationValue">2 dB/km</span>
+        </div>
+
+        <div class="slider-container">
+          <label for="scattering">Scattering Loss (dB/km):</label>
+          <input type="range" id="scattering" min="0" max="5" value="1" step="0.1">
+          <span id="scatteringValue">1 dB/km</span>
+        </div>
+
+        <button onclick="calculateLoss()">Calculate</button>
+
+        <div id="results">
+          <h2>Results:</h2>
+          <div class="result-line" id="absorptionLoss"></div>
+          <div class="result-line" id="scatteringLoss"></div>
+          <div class="result-line" id="totalLoss"></div>
+        </div>
+
+        <canvas id="lossChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="right-column">
+      <div class="image-container">
+        <div class="image-wrapper" onclick="openLightbox('fiber-optic-digital-cable.jpg')">
+          <img class="fiber-image" src="fiber-optic-digital-cable.jpg" alt="Fiber Optic Cable">
+          <div class="caption">Fiber Optic Digital Cable</div>
+        </div>
+        <div class="image-wrapper" onclick="openLightbox('major-parts-fiber-optic-cable.jpg')">
+          <img class="fiber-image" src="major-parts-fiber-optic-cable.jpg" alt="Parts of Fiber Optic Cable">
+          <div class="caption">Major Parts of a Fiber Optic Cable</div>
+        </div>
+        <div class="image-wrapper" onclick="openLightbox('Schematic-illustration-of-an-optical-fiber.png')">
+          <img class="fiber-image" src="Schematic-illustration-of-an-optical-fiber.png" alt="Schematic of Optical Fiber">
+          <div class="caption">Schematic Illustration of Optical Fiber</div>
+        </div>
+      </div>
+
+      <div class="concepts">
+        <h2>✅ Benefits in Industry</h2>
+        <ul>
+          <li><strong>Telecommunications:</strong> High bandwidth and low signal loss for internet and phone systems.</li>
+          <li><strong>Medical Applications:</strong> Used in non-invasive procedures like endoscopy and laser surgery.</li>
+          <li><strong>Industrial Automation:</strong> Immune to electromagnetic interference, ensuring reliability.</li>
+          <li><strong>Military & Aerospace:</strong> Secure and lightweight communication systems.</li>
+          <li><strong>Data Centers:</strong> Rapid data transfer and high performance networking.</li>
+        </ul>
+      </div>
+
+      <div class="concepts">
+        <h2>🔍 Facts About Optical Fiber</h2>
+        <ul>
+          <li>Light in optical fibers travels over <strong>200,000 km/s</strong> — nearly light speed!</li>
+          <li>One fiber can carry <strong>25,000+ phone calls</strong> at once.</li>
+          <li><strong>No interference</strong> from electrical noise unlike copper wires.</li>
+          <li><strong>Thinner</strong> than a human hair but extremely tough.</li>
+          <li>The fiber optics market is projected to hit <strong>$11B+</strong> by 2026.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lightbox -->
+  <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="Full Image">
+  </div>
+
+  <script>
+    const ctx = document.getElementById("lossChart").getContext("2d");
+    let lossChart = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: [0, 10],
+        datasets: [
+          {
+            label: "Absorption Loss (dB)",
+            data: [0, 0],
+            borderColor: "rgba(255, 99, 132, 1)",
+            backgroundColor: "rgba(255, 99, 132, 0.2)",
+            fill: false,
+            tension: 0.4
+          },
+          {
+            label: "Scattering Loss (dB)",
+            data: [0, 0],
+            borderColor: "rgba(54, 162, 235, 1)",
+            backgroundColor: "rgba(54, 162, 235, 0.2)",
+            fill: false,
+            tension: 0.4
+          },
+          {
+            label: "Total Loss (dB)",
+            data: [0, 0],
+            borderColor: "rgba(75, 192, 192, 1)",
+            backgroundColor: "rgba(75, 192, 192, 0.2)",
+            fill: false,
+            tension: 0.4
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: "Fiber Length (km)" } },
+          y: { title: { display: true, text: "Loss (dB)" } }
+        },
+        plugins: {
+          legend: { position: "top" }
+        }
+      }
+    });
+
+    function calculateLoss() {
+      const fiberLength = parseFloat(document.getElementById("fiberLength").value);
+      const attenuation = parseFloat(document.getElementById("attenuation").value);
+      const scattering = parseFloat(document.getElementById("scattering").value);
+
+      const absorptionLoss = attenuation * fiberLength;
+      const scatteringLoss = scattering * fiberLength;
+      const totalLoss = absorptionLoss + scatteringLoss;
+
+      document.getElementById("fiberLengthValue").innerText = fiberLength + " km";
+      document.getElementById("attenuationValue").innerText = attenuation + " dB/km";
+      document.getElementById("scatteringValue").innerText = scattering + " dB/km";
+
+      document.getElementById("absorptionLoss").innerText = "Absorption Loss: " + absorptionLoss.toFixed(2) + " dB";
+      document.getElementById("scatteringLoss").innerText = "Scattering Loss: " + scatteringLoss.toFixed(2) + " dB";
+      document.getElementById("totalLoss").innerText = "Total Loss: " + totalLoss.toFixed(2) + " dB";
+
+      lossChart.data.labels = [0, fiberLength];
+      lossChart.data.datasets[0].data = [0, absorptionLoss];
+      lossChart.data.datasets[1].data = [0, scatteringLoss];
+      lossChart.data.datasets[2].data = [0, totalLoss];
+      lossChart.update();
+    }
+
+    calculateLoss();
+
+    function openLightbox(src) {
+      document.getElementById("lightboxImg").src = src;
+      document.getElementById("lightbox").style.display = "flex";
+    }
+
+    function closeLightbox() {
+      document.getElementById("lightbox").style.display = "none";
+    }
+  </script>
+</body>
+</html>
